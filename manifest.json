@@ -1,7 +1,7 @@
 {
-    "name": "Getting Started Example",
-    "description": "Test extension",
-    "version": "1.0",
+    "name": "Three Web Stalker",
+    "description": "Browser alternative / web crawler visualizer",
+    "version": "0.1.0",
     "manifest_version": 3,
     "background": {
         "service_worker": "background.js",
@@ -10,12 +10,8 @@
     "permissions": ["storage", 
         "activeTab", 
         "scripting", 
-        "*://*/*", 
         "tabs",
-        "notifications",
-        "http://*/",
-        "https://*/",
-        "chrome-extension://*"],
+        "notifications"],
     "host_permissions": [
         "http://*/",
         "https://*/"
