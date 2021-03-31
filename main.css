@@ -1,6 +1,10 @@
 * {
     color: #00ff9d;
     border-color: cyan;
+    box-sizing: border-box;
+    margin: 1;
+    padding: 0;
+    text-align:center;
 }
 
 body {
