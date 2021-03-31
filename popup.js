@@ -1,6 +1,6 @@
 let page = document.getElementById("buttonDiv");
 let selectedClassName = "current";
-const presetButtonColors = ["#05ffa1", "#b967ff", "#fffb96", "#040774"];
+const presetButtonColors = ["#05ffa1", "#b967ff", "#fffb96", "#0f0f3d", "#1e1a24"];
 
 // Reacts to a button click by marking the selected button and saving
 // the selection

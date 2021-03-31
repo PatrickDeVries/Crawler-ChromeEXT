@@ -1,0 +1,27 @@
+* {
+    color: #00ff9d;
+    border-color: cyan;
+}
+
+body {
+    background-color: #2a2533;
+}
+
+input {
+    background-color: #1e1a24;
+}
+
+button {
+    background-color: #534964;
+    border-color: cyan;
+}
+
+canvas {
+    outline: 2px solid cyan;
+    background-color: #1e1a24;
+}
+
+div.wrapped {
+    outline: 2px solid cyan;
+    background-color: #1e1a24;
+}
