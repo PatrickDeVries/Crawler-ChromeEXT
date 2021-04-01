@@ -9,11 +9,17 @@ light.position.y = 2;
 light.position.z = 5;
 scene.add(light);
 
-
+var raycaster = new THREE.Raycaster(); // raycaster for making selections
+var mouse = new THREE.Vector2(); // mouse position
+var nodeMaterial = new THREE.MeshLambertMaterial({color:0xFF00FF});
+var currNodeMaterial = new THREE.MeshLambertMaterial({color:0xFFAAFF});
+var currNode = '';
+var currURL = '';
+var nodeRadius = 2.5;
 
 renderer.setSize(window.innerWidth-30, window.innerHeight);
-document.body.appendChild(renderer.domElement);
-
+// document.body.appendChild(renderer.domElement);
+document.getElementById("graph").appendChild(renderer.domElement);
 // label creator function
 function makeLabelCanvas(baseWidth, size, name) {
     const borderSize = 2;
@@ -48,9 +54,9 @@ function makeLabelCanvas(baseWidth, size, name) {
     return ctx.canvas;
   }
 
-  var cubes = [];
+  var nodes = [];
 
-  function addCube(x, y, labelStr) {
+  function addNode(x, y, labelStr) {
     // make labels
     const canvas = makeLabelCanvas(200, 32, labelStr);
     const texture = new THREE.CanvasTexture(canvas);
@@ -66,27 +72,35 @@ function makeLabelCanvas(baseWidth, size, name) {
     });
 
     // define cube
-    var geometry = new THREE.BoxGeometry();
-    var material = new THREE.MeshLambertMaterial({color:0xFF00FF});
-    var cube = new THREE.Mesh(geometry, material);
-    cube.position.x = x;
-    cube.position.y = y;
+    var node = '';
+    var geometry = new THREE.SphereGeometry(nodeRadius, 32, 32);
+    if (currNode == '') {
+        node = new THREE.Mesh(geometry, currNodeMaterial);
+        currNode = node;
+    }
+    else {
+        node = new THREE.Mesh(geometry, nodeMaterial);
+    }
+    node.position.x = x;
+    node.position.y = y;
 
     const label = new THREE.Sprite(labelMaterial);
-    cube.add(label);
+    node.add(label);
     label.position.x = 0;
-    label.position.y = 1;
+    label.position.y = nodeRadius*1.1;
 
     const labelBaseScale = 0.01;
     label.scale.x = canvas.width  * labelBaseScale;
     label.scale.y = canvas.height * labelBaseScale;
 
-    scene.add(cube);
-    cubes.push(cube);
+    label.userData = {"url": labelStr}
+
+    scene.add(node);
+    nodes.push(node);
   }
 
-  addCube(0, 0, "https://website.com/blahblahblahblahblahblahblahblah");
-  addCube(5, 0, "http://some-site.com/home");
+  addNode(0, 0, "https://website.com/blahblahblahblahblahblahblahblah");
+  addNode(10, 0, "http://some-site.com/home");
 
 
 camera.position.set(0, 0, 10);
@@ -97,6 +111,24 @@ camera.lookAt(0, 0, 0);
 var mouseDown = false;
 document.body.onmousedown = function() { 
     mouseDown = true;
+
+    mouse.x = ( event.clientX / renderer.domElement.clientWidth ) * 2 - 1;
+    mouse.y = - ( event.clientY / renderer.domElement.clientHeight ) * 2 + 1;
+
+    raycaster.setFromCamera( mouse, camera );
+
+    var intersects = raycaster.intersectObjects(nodes);
+    if (intersects.length > 0) {
+        if (currNode != '') {
+            currNode.material = nodeMaterial;
+        }
+        console.log(intersects[0]); 
+        currNode = intersects[0].object;
+        currNode.material = currNodeMaterial;
+        currURL = {"url": currNode.children[0].userData["url"]}
+        chrome.storage.sync.set({ currURL });
+        document.getElementById("currURL").innerText = currURL["url"];
+    }
 }
 document.body.onmouseup = function() {
     mouseDown = false;
