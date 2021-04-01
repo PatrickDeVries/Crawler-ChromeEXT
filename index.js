@@ -15,7 +15,7 @@ var nodeMaterial = new THREE.MeshLambertMaterial({color:0xFF00FF});
 var currNodeMaterial = new THREE.MeshLambertMaterial({color:0xFFAAFF});
 var currNode = '';
 var currURL = '';
-var nodeRadius = 2.5;
+var nodeRadius = 1.5;
 
 renderer.setSize(window.innerWidth-30, window.innerHeight);
 // document.body.appendChild(renderer.domElement);
@@ -58,7 +58,7 @@ function makeLabelCanvas(baseWidth, size, name) {
 
   function addNode(x, y, labelStr) {
     // make labels
-    const canvas = makeLabelCanvas(200, 32, labelStr);
+    const canvas = makeLabelCanvas(200, 48, labelStr);
     const texture = new THREE.CanvasTexture(canvas);
     // because our canvas is likely not a power of 2
     // in both dimensions set the filtering appropriately.
