@@ -9,6 +9,13 @@
 </head>
 <body>
     <script type="module" src="index.js"></script>
+    <div class="topnav">
+        <a class="logo"><img src="/images/logo128.png" id="navLogo"></a>
+        <a class="active" id="jumpURL">Base URL</a>
+        <a class="" id="jumpText">Page text</a>
+        <a class="" id="jumpGraph">Graph</a>
+    </div>
+    <script src="navbar.js"></script>
 
     <h1>Three Web Stalker</h1>
     <div>
@@ -21,9 +28,9 @@
         <button type="button" id="buildButton">Build tree</button>
         <p id="buildError"></p>
     </div>
-    <h2>Current page:</h2>
+    <h2 id="currPage">Current page:</h2>
 
-    <div id="treeDiv" class="wrapped"><h2 id="treeHeader"></h2></div>
+    <h2 id="treeHeader"><div id="treeDiv" class="wrapped"></div></h2>
 
     <h2>Graph:</h2>
     <button type="button" id="resetButton">Reset camera</button>

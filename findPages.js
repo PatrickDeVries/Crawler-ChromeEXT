@@ -9,12 +9,16 @@ buildButton.addEventListener("click", async () => {
         baseSite = obj.baseSite; 
         var xhr = new XMLHttpRequest();
         document.getElementById("buildError").innerText = "";
+        document.getElementById("currPage").innerText = "Current page: (" + baseSite + ")";
         try {
             xhr.open("GET", baseSite);
             xhr.send();
             xhr.onreadystatechange = function() {
                 if (this.readyState == 4 && this.status == 200) {
-                    document.getElementById("treeDiv").innerHTML = this.responseText;
+                    let pageText = this.responseText;
+                    let expr = /<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi;
+                    pageText = pageText.replace(expr, "script\n");
+                    document.getElementById("treeDiv").innerText = pageText;
                     const expression = /(https?:\/\/(?:www\.|(?!www))[a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9]\.[^\s]{2,}|www\.[a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9]\.[^\s]{2,}|https?:\/\/(?:www\.|(?!www))[a-zA-Z0-9]+\.[^\s]{2,}|www\.[a-zA-Z0-9]+\.[^\s]{2,})/gi;
                     let regURL = RegExp(expression, "g")
 
@@ -56,6 +60,7 @@ buildButton.addEventListener("click", async () => {
                 else if (this.readyState == 4) {
                     console.log("Error loading site");
                     document.getElementById("buildError").innerText = "Error loading site, try another URL";
+                    document.getElementById("treeDiv").innerHTML = "Nothing here";
                 }
 
             };
@@ -63,6 +68,7 @@ buildButton.addEventListener("click", async () => {
         catch {
             console.log("Error loading site");
             document.getElementById("buildError").innerText = "Error loading site, try another URL";
+            document.getElementById("treeDiv").innerHTML = "Nothing here";
         }
     });
   });

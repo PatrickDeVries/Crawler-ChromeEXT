@@ -1,35 +1,87 @@
 * {
-    color: #00ff9d;
-    border-color: cyan;
-    box-sizing: border-box;
-    margin: 1;
+  color: #00ff9d;
+  border-color: cyan;
+  box-sizing: border-box;
+  margin: 1;
+  padding: 0;
+  text-align: center;
+}
+
+.topnav {
+  background-color: #130c36;
+  position:fixed;
+  top:2px;
+  width:98vw;
+  overflow: hidden;
+  outline: 2px solid cyan;
+}
+
+/* Style the links inside the navigation bar */
+.topnav a {    
+  float: left;
+  color: #f2f2f2;
+  text-align: center;
+  padding-top: 1vh;
+  padding-bottom: 1vh;
+  padding-left: 3vw;
+  padding-right: 3vw;
+  height: 6vh;
+  text-decoration: none;
+  font-size: 17px;
+}
+
+#navLogo {
+    height: 4vh;
     padding: 0;
-    text-align:center;
+  }
+
+/* Change the color of links on hover */
+.topnav a:hover {
+  background-color: #ddd;
+  color: black;
+}
+
+/* Add a color to the active/current link */
+.topnav a.active {
+  background-color: cyan;
+  color: black;
 }
 
 body {
-    background-color: #2a2533;
+  background-color: #2a2533;
+  padding-top: 6vh;
 }
 
 input {
-    background-color: #1e1a24;
+  background-color: #1e1a24;
 }
 
 button {
-    background-color: #534964;
-    border-color: cyan;
+  background-color: #534964;
+  border-color: cyan;
 }
 
 canvas {
-    outline: 2px solid cyan;
-    background-color: #1e1a24;
+  outline: 2px solid cyan;
+  background-color: #1e1a24;
 }
 
-div.wrapped {
-    outline: 2px solid cyan;
-    background-color: #1e1a24;
-}
+/* div.wrapped {
+  outline: 2px solid cyan;
+  background-color: #1e1a24;
+} */
 
 #buildError {
-    color:red;
+  color: red;
+}
+
+#treeDiv, #treeDiv *{
+    all: initial;
+    color:#00ff9d;
+    /* outline: 2px solid cyan; */
+}
+
+#treeHeader {
+    outline: 2px solid cyan;
+    background-color: #1e1a24;
 }
