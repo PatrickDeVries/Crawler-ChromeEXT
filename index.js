@@ -1,25 +1,45 @@
 import * as THREE from './three/src/Three.js';
 
+/**
+ * Scene setup below
+ */
 var scene = new THREE.Scene();
 var camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, .01, 1000);
 var renderer = new THREE.WebGLRenderer();
 var light = new THREE.HemisphereLight(0xFFFFFF, 0x000000, 1);
 light.position.x = 0;
-light.position.y = 2;
-light.position.z = 5;
+light.position.y = 50;
+light.position.z = 50;
 scene.add(light);
 
-var raycaster = new THREE.Raycaster(); // raycaster for making selections
-var mouse = new THREE.Vector2(); // mouse position
+renderer.setSize(window.innerWidth-30, window.innerHeight);
+document.getElementById("graph").appendChild(renderer.domElement);
+
+camera.position.set(0, 2, 10);
+camera.rotation.x = 0;
+camera.rotation.y = 0;
+camera.rotation.z = 0;
+
+// variables for node selection
+var raycaster = new THREE.Raycaster();
+var mouse = new THREE.Vector2(); 
+
+// variables for node information
 var nodeMaterial = new THREE.MeshLambertMaterial({color:0xFF00FF});
 var currNodeMaterial = new THREE.MeshLambertMaterial({color:0xFFAAFF});
+var nodeRadius = 1.5;
+var nodes = [];
+
+
+// variables for tracking active page
 var currNode = '';
 var currURL = '';
-var nodeRadius = 1.5;
 
-renderer.setSize(window.innerWidth-30, window.innerHeight);
-// document.body.appendChild(renderer.domElement);
-document.getElementById("graph").appendChild(renderer.domElement);
+
+/** 
+ * Functions below
+*/
+
 // label creator function
 function makeLabelCanvas(baseWidth, size, name) {
     const borderSize = 2;
@@ -54,14 +74,12 @@ function makeLabelCanvas(baseWidth, size, name) {
     return ctx.canvas;
   }
 
-  var nodes = [];
-
-  function addNode(x, y, labelStr) {
+  // node creator function
+  function addNode(x, y, labelStr, parentNode) {
     // make labels
     const canvas = makeLabelCanvas(200, 48, labelStr);
     const texture = new THREE.CanvasTexture(canvas);
-    // because our canvas is likely not a power of 2
-    // in both dimensions set the filtering appropriately.
+
     texture.minFilter = THREE.LinearFilter;
     texture.wrapS = THREE.ClampToEdgeWrapping;
     texture.wrapT = THREE.ClampToEdgeWrapping;
@@ -71,12 +89,16 @@ function makeLabelCanvas(baseWidth, size, name) {
         transparent: true,
     });
 
-    // define cube
-    var node = '';
-    var geometry = new THREE.SphereGeometry(nodeRadius, 32, 32);
+    // define node
+    let node = '';
+    const geometry = new THREE.SphereGeometry(nodeRadius, 12, 12);
+    // select the first node
     if (currNode == '') {
         node = new THREE.Mesh(geometry, currNodeMaterial);
         currNode = node;
+        currURL = {"url": labelStr}
+        chrome.storage.sync.set({ currURL });
+        document.getElementById("currURL").innerText = currURL["url"];
     }
     else {
         node = new THREE.Mesh(geometry, nodeMaterial);
@@ -87,37 +109,35 @@ function makeLabelCanvas(baseWidth, size, name) {
     const label = new THREE.Sprite(labelMaterial);
     node.add(label);
     label.position.x = 0;
-    label.position.y = nodeRadius*1.1;
+    label.position.y = nodeRadius + 1;
 
     const labelBaseScale = 0.01;
     label.scale.x = canvas.width  * labelBaseScale;
     label.scale.y = canvas.height * labelBaseScale;
 
-    label.userData = {"url": labelStr}
+    node.userData = {"url": labelStr, "parent": parentNode, "children": []}
 
     scene.add(node);
     nodes.push(node);
   }
 
-  addNode(0, 0, "https://website.com/blahblahblahblahblahblahblahblah");
-  addNode(10, 0, "http://some-site.com/home");
-
-
-camera.position.set(0, 0, 10);
-camera.lookAt(0, 0, 0);
-
+/**
+ * Listeners below
+ */
 
 // track if the mouse button is held down
 var mouseDown = false;
 document.body.onmousedown = function() { 
     mouseDown = true;
 
-    mouse.x = ( event.clientX / renderer.domElement.clientWidth ) * 2 - 1;
-    mouse.y = - ( event.clientY / renderer.domElement.clientHeight ) * 2 + 1;
+    // get mouse location considering canvas bounds and scrolling
+    let canvasBounds = renderer.context.canvas.getBoundingClientRect();
+    mouse.x = ((event.clientX - canvasBounds.left)/(canvasBounds.right - canvasBounds.left)) * 2 - 1;
+    mouse.y = -((event.clientY - canvasBounds.top)/(canvasBounds.bottom - canvasBounds.top)) * 2 + 1;
 
+    // use raycaster to check for intersection with nodes
     raycaster.setFromCamera( mouse, camera );
-
-    var intersects = raycaster.intersectObjects(nodes);
+    let intersects = raycaster.intersectObjects(nodes);
     if (intersects.length > 0) {
         if (currNode != '') {
             currNode.material = nodeMaterial;
@@ -125,7 +145,7 @@ document.body.onmousedown = function() {
         console.log(intersects[0]); 
         currNode = intersects[0].object;
         currNode.material = currNodeMaterial;
-        currURL = {"url": currNode.children[0].userData["url"]}
+        currURL = {"url": currNode.userData["url"]}
         chrome.storage.sync.set({ currURL });
         document.getElementById("currURL").innerText = currURL["url"];
     }
@@ -139,6 +159,8 @@ var up = false;
 var down = false;
 var left = false;
 var right = false;
+var direction = new THREE.Vector3;
+var speed = 0.1;
 
 function pressKey() {
     if (event.keyCode === 87) {
@@ -201,54 +223,60 @@ function resetCamera() {
 }
 
 let resetButton = document.getElementById("resetButton");
-
 resetButton.addEventListener("click", async () => {
     resetCamera();
   });
 
-var direction = new THREE.Vector3;
-var speed = 0.1;
 
+/**
+ * Scene initialization below
+ */
+
+addNode(0, 0, "https://website.com/blahblahblahblahblahblahblahblah");
+addNode(10, 0, "http://some-site.com/home");
+addNode(-10, 0, "http://some-site.com/contact-about-us");
+
+
+
+// finally, animate
 function animate() {
     requestAnimationFrame(animate);
     // update  background color
     chrome.storage.sync.get("color", ({ color }) => {
-        scene.background= new THREE.Color(color);
+        scene.background = new THREE.Color(color);
       });
 
 
+      
     // handle movement
+    camera.getWorldDirection(direction);
     if (up) {
-        camera.getWorldDirection(direction);
         camera.position.addScaledVector(direction, speed);
     }
     if (down) {
-        camera.getWorldDirection(direction);
         camera.position.addScaledVector(direction, -speed);
     }
     if (left) {
-        camera.getWorldDirection(direction);
         var axis = new THREE.Vector3(0,1,0);
         direction.applyAxisAngle(axis, 90*Math.PI/180);
         camera.position.addScaledVector(direction, speed);
     }
     if (right) {
-        camera.getWorldDirection(direction);
         var axis = new THREE.Vector3(0,1,0);
         direction.applyAxisAngle(axis, -90*Math.PI/180);
         camera.position.addScaledVector(direction, speed);
     }
 
     
-    // handle rotation of camera
+    // handle rotation of camera with mouse
     camera.rotation.y = mx/250;
     camera.rotation.x = my/250;
 
     // block user from going past 0z
-    if (camera.position.z <0)
+    if (camera.position.z < 0)
         camera.position.z = 0;
 
-
+    // finally render scene
     renderer.render(scene, camera);
 }
 animate();
