@@ -131,7 +131,7 @@ document.body.onmousedown = function() {
     mouseDown = true;
 
     // get mouse location considering canvas bounds and scrolling
-    let canvasBounds = renderer.context.canvas.getBoundingClientRect();
+    let canvasBounds = renderer.getContext().canvas.getBoundingClientRect();
     mouse.x = ((event.clientX - canvasBounds.left)/(canvasBounds.right - canvasBounds.left)) * 2 - 1;
     mouse.y = -((event.clientY - canvasBounds.top)/(canvasBounds.bottom - canvasBounds.top)) * 2 + 1;
 

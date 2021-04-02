@@ -8,30 +8,61 @@ buildButton.addEventListener("click", async () => {
         console.log("Got baseSite:", obj.baseSite);
         baseSite = obj.baseSite; 
         var xhr = new XMLHttpRequest();
+        document.getElementById("buildError").innerText = "";
+        try {
+            xhr.open("GET", baseSite);
+            xhr.send();
+            xhr.onreadystatechange = function() {
+                if (this.readyState == 4 && this.status == 200) {
+                    document.getElementById("treeDiv").innerHTML = this.responseText;
+                    const expression = /(https?:\/\/(?:www\.|(?!www))[a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9]\.[^\s]{2,}|www\.[a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9]\.[^\s]{2,}|https?:\/\/(?:www\.|(?!www))[a-zA-Z0-9]+\.[^\s]{2,}|www\.[a-zA-Z0-9]+\.[^\s]{2,})/gi;
+                    let regURL = RegExp(expression, "g")
 
-        xhr.open("GET", baseSite);
-        xhr.send();
-        xhr.onreadystatechange = function() {
-            if (this.readyState == 4 && this.status == 200) {
-                document.getElementById("treeDiv").innerHTML = this.responseText;
-                let regURL = RegExp("(http|ftp|https)://([\w_-]+(?:(?:\.[\w_-]+)+))([\w.,@?^=%&:/~+#-]*[\w@?^=%&/~+#-])?", "g")
+                    var result;
+                    while((result = regURL.exec(this.responseText)) !== null) {
+                        
+                        // Try to correct urls with script tags attached
+                        var url = result[0];
+                        if (url.includes('"></script>')) {
+                            url = url.slice(0, -11);
+                        }
+                        // check for bad file types
+                        const badEnds = [".js", ".css"]
+                        let badURL = false;
+                        badEnds.forEach(ending => {
+                            if (url.includes(ending)) {
+                                badURL = true;
+                                return;
+                            }
+                        });
+                        // double check for extra html tags in url
+                        if (url.includes("<") || url.includes(">")) {
+                            badURL = true;
+                        }
+                        if (badURL) {
+                            continue;
+                        }
+                        // make sure to have http
+                        if (url.slice(0, 3) == "www") {
+                            url = "http://" + url;
+                        }
 
-                // var arr = [this.responseText.matchAll(regURL)];
-                // console.log(arr);    
-                var result;
-                while((result = regURL.exec(this.responseText)) !== null) {
-                    console.log(result);
+                        // checks passed!
+
+
+                        console.log(url);
+                    }
                 }
-                // for(var i=0; i<l.length; i++) {
-                //     arr.push(l[i].href);
-                // }
-                // console.log(arr)
+                else if (this.readyState == 4) {
+                    console.log("Error loading site");
+                    document.getElementById("buildError").innerText = "Error loading site, try another URL";
+                }
 
+            };
+        } 
+        catch {
+            console.log("Error loading site");
+            document.getElementById("buildError").innerText = "Error loading site, try another URL";
         }
-
-    };    
     });
-
-    
-
   });
