@@ -4,7 +4,7 @@ import * as THREE from './three/src/Three.js';
  * Scene setup below
  */
 var scene = new THREE.Scene();
-var camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, .01, 1000);
+var camera = new THREE.PerspectiveCamera(75, 2, .01, 1000);
 var renderer = new THREE.WebGLRenderer();
 var light = new THREE.HemisphereLight(0xFFFFFF, 0x000000, 1);
 light.position.x = 0;
@@ -12,7 +12,10 @@ light.position.y = 50;
 light.position.z = 50;
 scene.add(light);
 
-renderer.setSize(window.innerWidth-30, window.innerHeight);
+// let cWidth = document.getElementById("graphSec");
+
+// console.log(cWidth.width);
+// renderer.setSize(window.innerWidth, window.innerHeight);
 document.getElementById("graph").appendChild(renderer.domElement);
 
 camera.position.set(0, 2, 10);
@@ -119,6 +122,23 @@ function makeLabelCanvas(baseWidth, size, name) {
 
     scene.add(node);
     nodes.push(node);
+  }
+
+  function resizeCanvasToDisplaySize() {
+    const canvas = renderer.domElement;
+    // look up the size the canvas is being displayed
+    const width = canvas.clientWidth;
+    const height = canvas.clientHeight;
+  
+    // adjust displayBuffer size to match
+    if (canvas.width !== width || canvas.height !== height) {
+      // you must pass false here or three.js sadly fights the browser
+      renderer.setSize(width, height, false);
+      camera.aspect = width / height;
+      camera.updateProjectionMatrix();
+  
+      // update any render target sizes here
+    }
   }
 
 /**
@@ -276,6 +296,7 @@ function animate() {
     if (camera.position.z < 0)
         camera.position.z = 0;
 
+    resizeCanvasToDisplaySize();
     // finally render scene
     renderer.render(scene, camera);
 }

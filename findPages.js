@@ -1,24 +1,27 @@
 let buildButton = document.getElementById("buildButton");
 
-buildButton.addEventListener("click", async () => {
-    let [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-
+function processSite(urlLoc, insertId, errorId, urlId) {
     let baseSite = '';
-    chrome.storage.sync.get("baseSite", function (obj) {  
+    chrome.storage.sync.get(urlLoc, function (obj) {  
         console.log("Got baseSite:", obj.baseSite);
         baseSite = obj.baseSite; 
         var xhr = new XMLHttpRequest();
-        document.getElementById("buildError").innerText = "";
-        document.getElementById("currPage").innerText = "Current page: (" + baseSite + ")";
+        document.getElementById(errorId).innerText = "";
+        document.getElementById(urlId).innerText = "Current page: (" + baseSite + ")";
         try {
             xhr.open("GET", baseSite);
             xhr.send();
             xhr.onreadystatechange = function() {
                 if (this.readyState == 4 && this.status == 200) {
                     let pageText = this.responseText;
+
+                    //remove scripts to be safe
                     let expr = /<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi;
-                    pageText = pageText.replace(expr, "script\n");
-                    document.getElementById("treeDiv").innerText = pageText;
+                    pageText = pageText.replace(expr, "script removed for security");
+
+                    document.getElementById(insertId).innerText = pageText;
+
+                    // find all urls
                     const expression = /(https?:\/\/(?:www\.|(?!www))[a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9]\.[^\s]{2,}|www\.[a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9]\.[^\s]{2,}|https?:\/\/(?:www\.|(?!www))[a-zA-Z0-9]+\.[^\s]{2,}|www\.[a-zA-Z0-9]+\.[^\s]{2,})/gi;
                     let regURL = RegExp(expression, "g")
 
@@ -59,16 +62,23 @@ buildButton.addEventListener("click", async () => {
                 }
                 else if (this.readyState == 4) {
                     console.log("Error loading site");
-                    document.getElementById("buildError").innerText = "Error loading site, try another URL";
-                    document.getElementById("treeDiv").innerHTML = "Nothing here";
+                    document.getElementById(errorId).innerText = "Error loading site, try another URL";
+                    document.getElementById(insertId).innerHTML = "Nothing here";
                 }
 
             };
         } 
         catch {
             console.log("Error loading site");
-            document.getElementById("buildError").innerText = "Error loading site, try another URL";
-            document.getElementById("treeDiv").innerHTML = "Nothing here";
+            document.getElementById(errorId).innerText = "Error loading site, try another URL";
+            document.getElementById(insertId).innerHTML = "Nothing here";
         }
     });
+}
+
+buildButton.addEventListener("click", async () => {
+    let [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+
+    processSite("baseSite", "treeDiv", "buildError", "currPage");
+    
   });

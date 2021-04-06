@@ -5,7 +5,7 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="main.css">
-    <title>Document</title>
+    <title>Stalk3r</title>
 </head>
 <body>
     <script type="module" src="index.js"></script>
@@ -18,26 +18,50 @@
     <script src="navbar.js"></script>
 
     <h1>Three Web Stalker</h1>
-    <div>
-        <label for="baseSite">Enter your root site</label>
-        <input type="text" id="baseSite"></input>
-        <button type="button" id="inputButton">Save</button>
-        <script src="getInput.js"></script>
-    </div>
-    <div>
-        <button type="button" id="buildButton">Build tree</button>
+
+    <section id="baseSiteSec" class="wrappedAlt">
+        <div>
+            <label for="baseSite">Enter your root site</label>
+            <input type="text" id="baseSite"></input>
+            <button type="button" id="inputButton">Save</button>
+            <script src="getInput.js"></script>
+        </div>
+
+        <h3 id="currPage">Current page:</h3>
         <p id="buildError"></p>
-    </div>
-    <h2 id="currPage">Current page:</h2>
+        <button type="button" id="buildButton">Build tree</button>
 
-    <h2 id="treeHeader"><div id="treeDiv" class="wrapped"></div></h2>
+        <div id="treeContainer" class="wrapped">
+            <div id="treeDiv">
+                </p>Loading...</p>
+            </div>
+        </div>
+    </section>
 
-    <h2>Graph:</h2>
-    <button type="button" id="resetButton">Reset camera</button>
-    <div id="graph">
 
-    </div>
-    <h3>Selected url: <span id="currURL"></span></h3>
+    <section id="graphSec" class="wrappedAlt">
+        <h2>Graph:</h2>
+        <button type="button" id="resetButton">Reset camera</button>
+        <div id="graph" class="wrapped"></div>
+    </section>
+
+
+    <section id="disassemblySec" class="wrappedAlt">
+        <h2>Disassembly:</h2>
+        <h3>Selected url: <span id="currURL"></span></h3>
+
+        <button type="button" id="dissButton">Get page</button>
+        <div class="wrapped" id="dissDiv">
+            <p>Loading...</p>
+        </div>
+    </section>
+    <!-- <div id="currNodeDiv">
+        <button type="button" id="renderNodeButton">Get page</button>
+        <p id="renderNodeError"></p>
+        <p id="renderNodeHeader"><div id="renderNodeDiv" class="wrapped">Loading...</div></p>
+
+    </div> -->
+
 
     <script src="findPages.js"></script>
 
