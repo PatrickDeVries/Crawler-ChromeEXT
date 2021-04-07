@@ -1,27 +1,32 @@
 let jumpURL = document.getElementById("jumpURL");
-let jumpText = document.getElementById("jumpText");
 let jumpGraph = document.getElementById("jumpGraph");
+let jumpDiss = document.getElementById("jumpDiss");
 
 jumpURL.addEventListener("click", async () => {
   jumpURL.classList.add("active");
   jumpGraph.classList.remove("active");
-  jumpText.classList.remove("active");
+  jumpDiss.classList.remove("active");
 
-  document.getElementById("baseSite").scrollIntoView();
+  window.scrollTo(0, 0);
 });
 
 jumpGraph.addEventListener("click", async () => {
   jumpURL.classList.remove("active");
   jumpGraph.classList.add("active");
-  jumpText.classList.remove("active");
+  // jumpText.classList.remove("active");
+  jumpDiss.classList.remove("active");
 
-  document.getElementById("graph").scrollIntoView();
+  document.getElementById("graphSec").scrollIntoView();
+  window.scrollBy(0, -window.innerHeight/10);
+
 });
 
-jumpText.addEventListener("click", async () => {
+
+jumpDiss.addEventListener("click", async () => {
   jumpURL.classList.remove("active");
   jumpGraph.classList.remove("active");
-  jumpText.classList.add("active");
+  jumpDiss.classList.add("active");
 
-  document.getElementById("currPage").scrollIntoView();
+  document.getElementById("dissSec").scrollIntoView();
+  window.scrollBy(0, -window.innerHeight/10);
 });

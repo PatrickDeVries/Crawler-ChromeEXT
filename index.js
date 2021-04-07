@@ -1,5 +1,5 @@
 import * as THREE from './three/src/Three.js';
-
+// import {getLinks} from './findPages.js';
 /**
  * Scene setup below
  */
@@ -30,7 +30,7 @@ var mouse = new THREE.Vector2();
 // variables for node information
 var nodeMaterial = new THREE.MeshLambertMaterial({color:0xFF00FF});
 var currNodeMaterial = new THREE.MeshLambertMaterial({color:0xFFAAFF});
-var nodeRadius = 1.5;
+var nodeRadius = .5;
 var nodes = [];
 
 
@@ -78,7 +78,7 @@ function makeLabelCanvas(baseWidth, size, name) {
   }
 
   // node creator function
-  function addNode(x, y, labelStr, parentNode) {
+  function addNode(x, y, z, labelStr, parentNode, dir) {
     // make labels
     const canvas = makeLabelCanvas(200, 48, labelStr);
     const texture = new THREE.CanvasTexture(canvas);
@@ -100,14 +100,26 @@ function makeLabelCanvas(baseWidth, size, name) {
         node = new THREE.Mesh(geometry, currNodeMaterial);
         currNode = node;
         currURL = {"url": labelStr}
-        chrome.storage.sync.set({ currURL });
+        chrome.storage.sync.set( {"currURL":currURL} );
         document.getElementById("currURL").innerText = currURL["url"];
     }
     else {
         node = new THREE.Mesh(geometry, nodeMaterial);
     }
+
+    node.userData = {"url": labelStr, "parent": parentNode, "children": [], "dir":dir}
+    if (!parentNode) {
+        node.x = x;
+        node.y = y;
+    }
+    else {
+        parentNode["children"].push(node);
+
+    }
+
     node.position.x = x;
     node.position.y = y;
+    node.position.z = z;
 
     const label = new THREE.Sprite(labelMaterial);
     node.add(label);
@@ -118,7 +130,7 @@ function makeLabelCanvas(baseWidth, size, name) {
     label.scale.x = canvas.width  * labelBaseScale;
     label.scale.y = canvas.height * labelBaseScale;
 
-    node.userData = {"url": labelStr, "parent": parentNode, "children": []}
+  
 
     scene.add(node);
     nodes.push(node);
@@ -141,9 +153,59 @@ function makeLabelCanvas(baseWidth, size, name) {
     }
   }
 
+  function addChildNodes(dir, links, parent) {
+    console.log("addChildNodes links", links, "length", links.length, "parent", parent);  
+    
+    for(var i = 0; i < links.length; i++) {
+        console.log("adding", links[i])
+        let angle = i*(Math.PI*2 / links.length);
+        var xCoord, yCoord, zCoord;
+        let d = 10;
+        if (dir == "x") {
+            xCoord = (nodeRadius*d) * Math.cos(angle) + parent.position.x;
+            yCoord = (nodeRadius*d) * Math.sin(angle) + parent.position.y;
+            zCoord = parent.position.z;
+            console.log(xCoord, yCoord, zCoord);
+            addNode(xCoord, yCoord, zCoord, links[i], parent, "z");
+        }
+        else if (dir == "z") {
+            xCoord = parent.position.x;
+            yCoord = (nodeRadius*d) * Math.sin(angle) + parent.position.y;
+            zCoord = (nodeRadius*d) * Math.cos(angle) + parent.position.z;
+
+            addNode(xCoord, yCoord, zCoord, links[i], parent, "x");
+        }
+    }
+  }
+
 /**
  * Listeners below
  */
+
+// get base site input
+let inputButton = document.getElementById("inputButton");
+
+inputButton.addEventListener("click", async () => {
+    // let [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+    let baseSite = document.getElementById("baseSite");
+    console.log("baseSite: " + baseSite.value);
+    document.getElementById("currPage").innerText = "Current Root Site ("+baseSite.value+") ";
+    let origin = {"url": baseSite.value};
+    chrome.storage.sync.set({'baseSite':origin}, function() {
+        console.log("baseSite:" + origin);
+    });
+    addNode(0, 0, 0, origin["url"], null, "x");
+
+    getLinks(origin["url"]).then(links => {
+        console.log("links", links, "len", links.length, "type", typeof(links));
+        console.log("nodes[0]", nodes[0]);
+        setTimeout(() => {
+            addChildNodes("x", links, nodes[0])
+        }, 1000);
+    });
+
+
+});
 
 // track if the mouse button is held down
 var mouseDown = false;
@@ -165,8 +227,8 @@ document.body.onmousedown = function() {
         console.log(intersects[0]); 
         currNode = intersects[0].object;
         currNode.material = currNodeMaterial;
-        currURL = {"url": currNode.userData["url"]}
-        chrome.storage.sync.set({ currURL });
+        currURL = {"url": currNode.userData["url"]};
+        chrome.storage.sync.set( {"currURL": currURL} );
         document.getElementById("currURL").innerText = currURL["url"];
     }
 }
@@ -252,9 +314,9 @@ resetButton.addEventListener("click", async () => {
  * Scene initialization below
  */
 
-addNode(0, 0, "https://website.com/blahblahblahblahblahblahblahblah");
-addNode(10, 0, "http://some-site.com/home");
-addNode(-10, 0, "http://some-site.com/contact-about-us");
+// addNode(0, 0, "https://website.com/blahblahblahblahblahblahblahblah");
+// addNode(10, 0, "https://google.com");
+// addNode(-10, 0, "http://some-site.com/contact-about-us");
 
 
 
@@ -265,7 +327,6 @@ function animate() {
     chrome.storage.sync.get("color", ({ color }) => {
         scene.background = new THREE.Color(color);
       });
-
 
       
     // handle movement
