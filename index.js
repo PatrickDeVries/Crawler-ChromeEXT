@@ -30,6 +30,7 @@ var mouse = new THREE.Vector2();
 // variables for node information
 var nodeMaterial = new THREE.MeshLambertMaterial({color:0xFF00FF});
 var currNodeMaterial = new THREE.MeshLambertMaterial({color:0xFFAAFF});
+var lineMaterial = new THREE.LineBasicMaterial({ color: 0xFF00FF})
 var nodeRadius = .5;
 var nodes = [];
 
@@ -89,7 +90,7 @@ function makeLabelCanvas(baseWidth, size, name) {
 
     const labelMaterial = new THREE.SpriteMaterial({
         map: texture,
-        transparent: true,
+        transparent: false,
     });
 
     // define node
@@ -99,6 +100,7 @@ function makeLabelCanvas(baseWidth, size, name) {
     if (currNode == '') {
         node = new THREE.Mesh(geometry, currNodeMaterial);
         currNode = node;
+        labelMaterial.color.setHex(0x0066ff);
         currURL = {"url": labelStr}
         chrome.storage.sync.set( {"currURL":currURL} );
         document.getElementById("currURL").innerText = currURL["url"];
@@ -113,8 +115,7 @@ function makeLabelCanvas(baseWidth, size, name) {
         node.y = y;
     }
     else {
-        parentNode["children"].push(node);
-
+        parentNode.userData["children"].push(node);
     }
 
     node.position.x = x;
@@ -124,12 +125,26 @@ function makeLabelCanvas(baseWidth, size, name) {
     const label = new THREE.Sprite(labelMaterial);
     node.add(label);
     label.position.x = 0;
-    label.position.y = nodeRadius + 1;
+    label.position.y = nodeRadius + .5;
 
     const labelBaseScale = 0.01;
     label.scale.x = canvas.width  * labelBaseScale;
     label.scale.y = canvas.height * labelBaseScale;
 
+    if (parentNode) {
+        scene.updateMatrixWorld(true);
+
+        // draw line to parent
+        var points = [];
+        var n = new THREE.Vector3().copy(node.position);
+        var p = new THREE.Vector3().copy(parentNode.position);
+        points.push(n.divide(new THREE.Vector3(10, 10, 1)));
+        points.push(p.sub(n).sub(n).sub(n).sub(n).sub(n).sub(n).sub(n).sub(n).sub(n));   
+        const lineGeo = new THREE.BufferGeometry().setFromPoints( points );
+
+        var line = new THREE.Line(lineGeo,lineMaterial);
+        node.add(line);
+    }
   
 
     scene.add(node);
@@ -200,8 +215,10 @@ inputButton.addEventListener("click", async () => {
         console.log("links", links, "len", links.length, "type", typeof(links));
         console.log("nodes[0]", nodes[0]);
         setTimeout(() => {
-            addChildNodes("x", links, nodes[0])
+            addChildNodes(nodes[0].userData["dir"], links, nodes[0])
+
         }, 1000);
+
     });
 
 
@@ -223,10 +240,14 @@ document.body.onmousedown = function() {
     if (intersects.length > 0) {
         if (currNode != '') {
             currNode.material = nodeMaterial;
+            currNode.children[0].material.color.setHex(0xffffff);
+
         }
         console.log(intersects[0]); 
         currNode = intersects[0].object;
         currNode.material = currNodeMaterial;
+        currNode.children[0].material.color.setHex(0x0066ff);
+        // console.log(currNode.children[0].material);
         currURL = {"url": currNode.userData["url"]};
         chrome.storage.sync.set( {"currURL": currURL} );
         document.getElementById("currURL").innerText = currURL["url"];
