@@ -1,5 +1,14 @@
-function getLinks(url) {
-    var promise = new Promise(resolve => {
+
+
+async function sendQuery(url) {
+
+}
+
+
+ function getLinks(url) {
+
+
+    return new Promise(function(resolve) {
         var urls = [];
         var xhr = new XMLHttpRequest();
         try {
@@ -7,6 +16,8 @@ function getLinks(url) {
                 url = url.slice(0, -1);
             }
             console.log("url:", url);
+            let results = sendQuery(url);
+            
             xhr.open("GET", url);
             xhr.send();
             xhr.onreadystatechange = function() {
@@ -64,8 +75,10 @@ function getLinks(url) {
         console.log("urls", urls);
         resolve(urls);
     });
-    promise.then(result=> console.log("result", result));
-    return promise;
+    // promise.then(function(result) {
+    //     return result;
+    // });
+    // return promise;
 }
 
 // function that will load html and urls from a site 

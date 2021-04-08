@@ -197,21 +197,105 @@ function makeLabelCanvas(baseWidth, size, name) {
             newNodes.push(node);
         }
     }
-    for (var i = 0; i < links.length; i++) {
-        try {
-            var promise = getLinks(links[i]);
-            promise.then(a => undefined);
-            promise.then(nextLinks => {
-                console.log("links", nextLinks, "len", nextLinks.length, "type", typeof(nextLinks), "newNodes[i]", newNodes[i]);
-                // console.log("nodes[0]", nodes[0]);
-                    addChildNodes(node.userData["dir"], nextLinks, node);
-            });
-        }
-        catch {
-            continue;
-        } 
+    for (var i = 0; i < newNodes.length; i++) {
+        buildTree(newNodes[i]);
+    //     try {
+    //         var promise = getLinks(links[i]);
+    //         promise.then(a => undefined);
+    //         promise.then(nextLinks => {
+    //             console.log("links", nextLinks, "len", nextLinks.length, "type", typeof(nextLinks), "newNodes[i]", newNodes[i]);
+    //             // console.log("nodes[0]", nodes[0]);
+    //                 addChildNodes(node.userData["dir"], nextLinks, node);
+    //         });
+    //     }
+    //     catch {
+    //         continue;
+    //     } 
     }
   }
+
+  function makeRequest(method, url) {
+    return new Promise(function (resolve, reject) {
+        let xhr = new XMLHttpRequest();
+        xhr.open(method, url);
+        xhr.onload = function () {
+            if (this.status >= 200 && this.status < 300) {
+                resolve(xhr.response);
+            } else {
+                reject({
+                    status: this.status,
+                    statusText: xhr.statusText
+                });
+            }
+        };
+        xhr.onerror = function () {
+            reject({
+                status: this.status,
+                statusText: xhr.statusText
+            });
+        };
+        xhr.send();
+    });
+}
+
+async function buildTree(node) {
+    let dest = node.userData["url"];
+    if (dest.substring(dest.length-1) == '"') {
+        dest = dest.slice(0, -1);
+    }
+    console.log("url:", dest);
+    let res = await makeRequest("GET", dest);
+    var urls = [];
+
+    let pageText = res;
+    console.log(res);
+    console.log(pageText)
+    //remove scripts to be safe
+    let expr = /<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi;
+    pageText = pageText.replace(expr, "script removed for security");
+
+    // find all urls
+    const expression = /(https?:\/\/(?:www\.|(?!www))[a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9]\.[^\s]{2,}|www\.[a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9]\.[^\s]{2,}|https?:\/\/(?:www\.|(?!www))[a-zA-Z0-9]+\.[^\s]{2,}|www\.[a-zA-Z0-9]+\.[^\s]{2,})/gi;
+    let regURL = RegExp(expression, "g")
+
+    var result;
+    while((result = regURL.exec(pageText)) !== null) {
+        
+        // Try to correct urls with script tags attached
+        var url = result[0];
+        if (url.includes('"></script>')) {
+            url = url.slice(0, -11);
+        }
+        // check for bad file types
+        const badEnds = [".js", ".css", ".png", ".jpg"];
+        let badURL = false;
+        badEnds.forEach(ending => {
+            if (url.includes(ending)) {
+                badURL = true;
+                return;
+            }
+        });
+        // double check for extra html tags in url
+        if (url.includes("<") || url.includes(">")) {
+            badURL = true;
+        }
+        if (badURL) {
+            continue;
+        }
+        // make sure to have http
+        if (url.slice(0, 3) == "www") {
+            url = "http://" + url;
+        }
+
+        urls.push(url);
+    }
+    console.log("urls", urls);
+
+    addChildNodes(node["dir"], urls, node);
+    
+    // return urls;
+    
+}
 
 /**
  * Listeners below
@@ -231,14 +315,11 @@ inputButton.addEventListener("click", async () => {
     });
     addNode(0, 0, 0, origin["url"], null, "x");
 
-    var promise = getLinks(origin["url"]);
-    promise.then(function(links) {
-        console.log("links", links, "len", links.length, "type", typeof(links));
-        console.log("nodes[0]", nodes[0]);
-        addChildNodes(nodes[0].userData["dir"], links, nodes[0])
-    });
-
-
+    buildTree(nodes[0]);
+    // const links = await Promise.resolve(getLinks(origin["url"]));
+    // console.log("links", links, "len", links.length, "type", typeof(links));
+    // console.log("nodes[0]", nodes[0]);
+    // addChildNodes(nodes[0].userData["dir"], links, nodes[0])
 });
 
 // track if the mouse button is held down
