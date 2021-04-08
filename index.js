@@ -33,6 +33,7 @@ var currNodeMaterial = new THREE.MeshLambertMaterial({color:0xFFAAFF});
 var lineMaterial = new THREE.LineBasicMaterial({ color: 0xFF00FF})
 var nodeRadius = .5;
 var nodes = [];
+var maxDepth = 2;
 
 
 // variables for tracking active page
@@ -79,7 +80,7 @@ function makeLabelCanvas(baseWidth, size, name) {
   }
 
   // node creator function
-  function addNode(x, y, z, labelStr, parentNode, dir) {
+  function addNode(x, y, z, labelStr, parentNode, dir, angle) {
     // make labels
     const canvas = makeLabelCanvas(200, 48, labelStr);
     const texture = new THREE.CanvasTexture(canvas);
@@ -109,7 +110,7 @@ function makeLabelCanvas(baseWidth, size, name) {
         node = new THREE.Mesh(geometry, nodeMaterial);
     }
 
-    node.userData = {"url": labelStr, "parent": parentNode, "children": [], "dir":dir}
+    node.userData = {"url": labelStr, "parent": parentNode, "children": [], "dir":dir, "angle":angle}
     if (!parentNode) {
         node.x = x;
         node.y = y;
@@ -138,8 +139,8 @@ function makeLabelCanvas(baseWidth, size, name) {
         var points = [];
         var n = new THREE.Vector3().copy(node.position);
         var p = new THREE.Vector3().copy(parentNode.position);
-        points.push(n.divide(new THREE.Vector3(10, 10, 1)));
-        points.push(p.sub(n).sub(n).sub(n).sub(n).sub(n).sub(n).sub(n).sub(n).sub(n));   
+        points.push(new THREE.Vector3(0, 0, 0));
+        points.push(new THREE.Vector3(0, 0, 0).sub(n.sub(p)));   
         const lineGeo = new THREE.BufferGeometry().setFromPoints( points );
 
         var line = new THREE.Line(lineGeo,lineMaterial);
@@ -149,6 +150,7 @@ function makeLabelCanvas(baseWidth, size, name) {
 
     scene.add(node);
     nodes.push(node);
+    console.log(nodes);
     return node;
   }
 
@@ -169,48 +171,44 @@ function makeLabelCanvas(baseWidth, size, name) {
     }
   }
 
-  function addChildNodes(dir, links, parent) {
+  function addChildNodes(dir, links, parent, depth) {
     console.log("addChildNodes links", links, "length", links.length, "parent", parent);  
     
     var newNodes = []
     // build out the current node connections
     for(var i = 0; i < links.length; i++) {
-        console.log("adding", links[i])
+        console.log("adding", links[i]);
         let angle = i*(Math.PI*2 / links.length);
         var xCoord, yCoord, zCoord;
-        let d = 10;
+        let d = 20;
         if (dir == "x") {
-            xCoord = (nodeRadius*d) * Math.cos(angle) + parent.position.x;
-            yCoord = (nodeRadius*d) * Math.sin(angle) + parent.position.y;
+            xCoord = (nodeRadius*d*depth) * Math.cos(angle) + parent.position.x;
+            yCoord = (nodeRadius*d*depth) * Math.sin(angle) + parent.position.y;
             zCoord = parent.position.z;
             console.log(xCoord, yCoord, zCoord);
 
-            let node = addNode(xCoord, yCoord, zCoord, links[i], parent, "z");
+            let node = addNode(xCoord, yCoord, zCoord, links[i], parent, "z", angle);
             newNodes.push(node);
         }
         else if (dir == "z") {
-            xCoord = parent.position.x + nodeRadius*d;
+            let pangle = parent.userData["angle"];
+            xCoord = (nodeRadius*d*depth) * Math.cos(pangle) + parent.position.x;
             yCoord = (nodeRadius*d) * Math.sin(angle) + parent.position.y;
-            zCoord = (nodeRadius*d) * Math.cos(angle) + parent.position.z;
+            zCoord = ((nodeRadius*d) * Math.cos(angle) + parent.position.z);
+            // xCoord = (parent.position.x + depth*((parent.position.x >= 0) ? nodeRadius*d : nodeRadius*-d)) * Math.sin(parent.userData["angle"]);
+            // yCoord = (nodeRadius*d) * Math.sin(angle) + parent.position.y;
+            // zCoord = ((nodeRadius*d) * Math.cos(angle) + parent.position.z);
 
-            let node = addNode(xCoord, yCoord, zCoord, links[i], parent, "x");
+            let node = addNode(xCoord, yCoord, zCoord, links[i], parent, "x", angle);
             newNodes.push(node);
+
         }
+        console.log("added", links[i])
     }
     for (var i = 0; i < newNodes.length; i++) {
-        buildTree(newNodes[i]);
-    //     try {
-    //         var promise = getLinks(links[i]);
-    //         promise.then(a => undefined);
-    //         promise.then(nextLinks => {
-    //             console.log("links", nextLinks, "len", nextLinks.length, "type", typeof(nextLinks), "newNodes[i]", newNodes[i]);
-    //             // console.log("nodes[0]", nodes[0]);
-    //                 addChildNodes(node.userData["dir"], nextLinks, node);
-    //         });
-    //     }
-    //     catch {
-    //         continue;
-    //     } 
+        if (depth <= maxDepth){
+            buildTree(newNodes[i], depth+1);
+        }
     }
   }
 
@@ -238,7 +236,7 @@ function makeLabelCanvas(baseWidth, size, name) {
     });
 }
 
-async function buildTree(node) {
+async function buildTree(node, d) {
     let dest = node.userData["url"];
     if (dest.substring(dest.length-1) == '"') {
         dest = dest.slice(0, -1);
@@ -248,8 +246,7 @@ async function buildTree(node) {
     var urls = [];
 
     let pageText = res;
-    console.log(res);
-    console.log(pageText)
+
     //remove scripts to be safe
     let expr = /<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi;
     pageText = pageText.replace(expr, "script removed for security");
@@ -289,12 +286,13 @@ async function buildTree(node) {
 
         urls.push(url);
     }
+    urls = [...new Set(urls)];
     console.log("urls", urls);
 
-    addChildNodes(node["dir"], urls, node);
-    
-    // return urls;
-    
+    // limit tree depth
+    if (d <= maxDepth) {
+        addChildNodes(node.userData["dir"], urls, node, d);
+    }
 }
 
 /**
@@ -313,13 +311,9 @@ inputButton.addEventListener("click", async () => {
     chrome.storage.sync.set({'baseSite':origin}, function() {
         console.log("baseSite:" + origin);
     });
-    addNode(0, 0, 0, origin["url"], null, "x");
+    addNode(0, 0, 0, origin["url"], null, "x", 0);
 
-    buildTree(nodes[0]);
-    // const links = await Promise.resolve(getLinks(origin["url"]));
-    // console.log("links", links, "len", links.length, "type", typeof(links));
-    // console.log("nodes[0]", nodes[0]);
-    // addChildNodes(nodes[0].userData["dir"], links, nodes[0])
+    buildTree(nodes[0], 1);
 });
 
 // track if the mouse button is held down
