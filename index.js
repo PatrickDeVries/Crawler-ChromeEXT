@@ -149,6 +149,7 @@ function makeLabelCanvas(baseWidth, size, name) {
 
     scene.add(node);
     nodes.push(node);
+    return node;
   }
 
   function resizeCanvasToDisplaySize() {
@@ -171,6 +172,8 @@ function makeLabelCanvas(baseWidth, size, name) {
   function addChildNodes(dir, links, parent) {
     console.log("addChildNodes links", links, "length", links.length, "parent", parent);  
     
+    var newNodes = []
+    // build out the current node connections
     for(var i = 0; i < links.length; i++) {
         console.log("adding", links[i])
         let angle = i*(Math.PI*2 / links.length);
@@ -181,15 +184,32 @@ function makeLabelCanvas(baseWidth, size, name) {
             yCoord = (nodeRadius*d) * Math.sin(angle) + parent.position.y;
             zCoord = parent.position.z;
             console.log(xCoord, yCoord, zCoord);
-            addNode(xCoord, yCoord, zCoord, links[i], parent, "z");
+
+            let node = addNode(xCoord, yCoord, zCoord, links[i], parent, "z");
+            newNodes.push(node);
         }
         else if (dir == "z") {
-            xCoord = parent.position.x;
+            xCoord = parent.position.x + nodeRadius*d;
             yCoord = (nodeRadius*d) * Math.sin(angle) + parent.position.y;
             zCoord = (nodeRadius*d) * Math.cos(angle) + parent.position.z;
 
-            addNode(xCoord, yCoord, zCoord, links[i], parent, "x");
+            let node = addNode(xCoord, yCoord, zCoord, links[i], parent, "x");
+            newNodes.push(node);
         }
+    }
+    for (var i = 0; i < links.length; i++) {
+        try {
+            var promise = getLinks(links[i]);
+            promise.then(a => undefined);
+            promise.then(nextLinks => {
+                console.log("links", nextLinks, "len", nextLinks.length, "type", typeof(nextLinks), "newNodes[i]", newNodes[i]);
+                // console.log("nodes[0]", nodes[0]);
+                    addChildNodes(node.userData["dir"], nextLinks, node);
+            });
+        }
+        catch {
+            continue;
+        } 
     }
   }
 
@@ -211,14 +231,11 @@ inputButton.addEventListener("click", async () => {
     });
     addNode(0, 0, 0, origin["url"], null, "x");
 
-    getLinks(origin["url"]).then(links => {
+    var promise = getLinks(origin["url"]);
+    promise.then(function(links) {
         console.log("links", links, "len", links.length, "type", typeof(links));
         console.log("nodes[0]", nodes[0]);
-        setTimeout(() => {
-            addChildNodes(nodes[0].userData["dir"], links, nodes[0])
-
-        }, 1000);
-
+        addChildNodes(nodes[0].userData["dir"], links, nodes[0])
     });
 
 

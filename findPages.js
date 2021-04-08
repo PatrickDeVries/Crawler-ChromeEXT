@@ -1,8 +1,12 @@
 function getLinks(url) {
-    return new Promise(resolve => {
+    var promise = new Promise(resolve => {
         var urls = [];
         var xhr = new XMLHttpRequest();
         try {
+            if (url.substring(url.length-1) == '"') {
+                url = url.slice(0, -1);
+            }
+            console.log("url:", url);
             xhr.open("GET", url);
             xhr.send();
             xhr.onreadystatechange = function() {
@@ -26,7 +30,7 @@ function getLinks(url) {
                             url = url.slice(0, -11);
                         }
                         // check for bad file types
-                        const badEnds = [".js", ".css"]
+                        const badEnds = [".js", ".css", ".png", ".jpg"];
                         let badURL = false;
                         badEnds.forEach(ending => {
                             if (url.includes(ending)) {
@@ -45,11 +49,9 @@ function getLinks(url) {
                         if (url.slice(0, 3) == "www") {
                             url = "http://" + url;
                         }
-    
+
                         urls.push(url);
-                        // console.log(url);
                     }
-                    console.log("urls", urls);
                 }
                 else if (this.readyState == 4) {
                     console.log("Error loading site");
@@ -59,8 +61,11 @@ function getLinks(url) {
         catch {
             console.log("Error loading site");
         }
+        console.log("urls", urls);
         resolve(urls);
     });
+    promise.then(result=> console.log("result", result));
+    return promise;
 }
 
 // function that will load html and urls from a site 
