@@ -30,10 +30,11 @@ var mouse = new THREE.Vector2();
 // variables for node information
 var nodeMaterial = new THREE.MeshLambertMaterial({color:0xFF00FF});
 var currNodeMaterial = new THREE.MeshLambertMaterial({color:0xFFAAFF});
-var lineMaterial = new THREE.LineBasicMaterial({ color: 0xFF00FF})
+var lineMaterial = new THREE.LineBasicMaterial({ color: 0x00FFFF})
 var nodeRadius = .5;
 var nodes = [];
-var maxDepth = 2;
+var maxDepth = 3;
+var existingURLS = [];
 
 
 // variables for tracking active page
@@ -192,7 +193,7 @@ function makeLabelCanvas(baseWidth, size, name) {
         }
         else if (dir == "z") {
             let pangle = parent.userData["angle"];
-            xCoord = (nodeRadius*d*depth) * Math.cos(pangle) + parent.position.x;
+            xCoord = parent.position.x;
             yCoord = (nodeRadius*d) * Math.sin(angle) + parent.position.y;
             zCoord = ((nodeRadius*d) * Math.cos(angle) + parent.position.z);
             // xCoord = (parent.position.x + depth*((parent.position.x >= 0) ? nodeRadius*d : nodeRadius*-d)) * Math.sin(parent.userData["angle"]);
@@ -286,7 +287,13 @@ async function buildTree(node, d) {
 
         urls.push(url);
     }
+    // get unique urls
     urls = [...new Set(urls)];
+    // only keep urls that are not already in existing urls
+    urls = urls.filter( function(e) {
+        return !existingURLS.includes(e);
+    })
+    existingURLS = existingURLS.concat(urls);
     console.log("urls", urls);
 
     // limit tree depth
@@ -312,7 +319,8 @@ inputButton.addEventListener("click", async () => {
         console.log("baseSite:" + origin);
     });
     addNode(0, 0, 0, origin["url"], null, "x", 0);
-
+    existingURLS.push(origin["url"]);
+    
     buildTree(nodes[0], 1);
 });
 
