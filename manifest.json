@@ -1,7 +1,7 @@
 {
     "name": "Three Web Stalker",
     "description": "Browser alternative / web crawler visualizer",
-    "version": "0.1.0",
+    "version": "1.0.0",
     "manifest_version": 3,
     "background": {
         "service_worker": "background.js",

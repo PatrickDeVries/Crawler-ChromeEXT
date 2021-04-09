@@ -344,12 +344,13 @@ buildButton.addEventListener("click", async () => {
 // track if the mouse button is held down
 var mouseDown = false;
 document.body.onmousedown = function() { 
-    mouseDown = true;
 
     // get mouse location considering canvas bounds and scrolling
     let canvasBounds = renderer.getContext().canvas.getBoundingClientRect();
     mouse.x = ((event.clientX - canvasBounds.left)/(canvasBounds.right - canvasBounds.left)) * 2 - 1;
     mouse.y = -((event.clientY - canvasBounds.top)/(canvasBounds.bottom - canvasBounds.top)) * 2 + 1;
+
+    mouseDown = true;
 
     // use raycaster to check for intersection with nodes
     raycaster.setFromCamera( mouse, camera );
@@ -370,6 +371,7 @@ document.body.onmousedown = function() {
         document.getElementById("currURL").innerText = currURL["url"];
     }
 }
+
 document.body.onmouseup = function() {
     mouseDown = false;
 }
@@ -380,7 +382,7 @@ var down = false;
 var left = false;
 var right = false;
 var direction = new THREE.Vector3;
-var speed = 0.1;
+var speed = 0.2;
 
 function pressKey() {
     if (event.keyCode === 87) {
@@ -402,15 +404,22 @@ document.onkeydown = pressKey;
 // track if the motion keys are released
 function releaseKey() {
     if (event.keyCode === 87) {
+        speed = .1;
         up = false;
     }
     else if (event.keyCode === 83) {
+        speed = .1;
+
         down = false;
     }
     else if (event.keyCode === 65) {
+        speed = .1;
+
         left = false;
     }
     else if (event.keyCode === 68) {
+        speed = .1;
+
         right = false;
     }
 }
@@ -465,17 +474,21 @@ function animate() {
     // handle movement
     camera.getWorldDirection(direction);
     if (up) {
+        speed*=1.01;
         camera.position.addScaledVector(direction, speed);
     }
     if (down) {
+        speed*=1.01;
         camera.position.addScaledVector(direction, -speed);
     }
     if (left) {
+        speed*=1.01;
         var axis = new THREE.Vector3(0,1,0);
         direction.applyAxisAngle(axis, 90*Math.PI/180);
         camera.position.addScaledVector(direction, speed);
     }
     if (right) {
+        speed*=1.01;
         var axis = new THREE.Vector3(0,1,0);
         direction.applyAxisAngle(axis, -90*Math.PI/180);
         camera.position.addScaledVector(direction, speed);
@@ -485,10 +498,6 @@ function animate() {
     // handle rotation of camera with mouse
     camera.rotation.y = mx/250;
     camera.rotation.x = my/250;
-
-    // block user from going past 0z
-    // if (camera.position.z < 0)
-    //     camera.position.z = 0;
 
     resizeCanvasToDisplaySize();
     // finally render scene
