@@ -33,8 +33,9 @@ var currNodeMaterial = new THREE.MeshLambertMaterial({color:0xFFAAFF});
 var lineMaterial = new THREE.LineBasicMaterial({ color: 0x00FFFF})
 var nodeRadius = .5;
 var nodes = [];
-var maxDepth = 2;
+var maxDepth = 3;
 var existingURLS = [];
+var origin;
 
 
 // variables for tracking active page
@@ -151,7 +152,6 @@ function makeLabelCanvas(baseWidth, size, name) {
 
     scene.add(node);
     nodes.push(node);
-    console.log(nodes);
     return node;
   }
 
@@ -173,20 +173,10 @@ function makeLabelCanvas(baseWidth, size, name) {
   }
 
   function addChildNodes(dir, links, parent, depth) {
-    console.log("addChildNodes links", links, "length", links.length, "parent", parent);  
     
-    let tempObject = new THREE.SphereGeometry(0, 0, 0);
-    let pivot = new THREE.Mesh(tempObject, currNodeMaterial);
-    console.log("t", pivot);
-
-    pivot.position.set(parent.position.x, parent.position.y, parent.position.z);
-    console.log("t", pivot);
-
     var newNodes = []
     // build out the current node connections
     for(var i = 0; i < links.length; i++) {
-        console.log("adding", links[i]);
-
         let d = 50; // line scale factor
         var xCoord, yCoord, zCoord;
         let pangle = parent.userData["angle"];
@@ -197,7 +187,6 @@ function makeLabelCanvas(baseWidth, size, name) {
             xCoord = (nodeRadius*(d)) * Math.cos(angle) + parent.position.x;
             yCoord = (nodeRadius*(d)) * Math.sin(angle) + parent.position.y;
             zCoord = parent.position.z - depth*10;
-            console.log(xCoord, yCoord, zCoord);
 
             let node = addNode(xCoord, yCoord, zCoord, links[i], parent, angle);
             newNodes.push(node);
@@ -211,13 +200,12 @@ function makeLabelCanvas(baseWidth, size, name) {
             let node = addNode(xCoord, yCoord, zCoord, links[i], parent, pangle);
             newNodes.push(node);
         }
-        console.log("added", links[i])
+        // console.log("added", links[i])
     }
     for (var i = 0; i < newNodes.length; i++) {
         if (depth <= maxDepth){
             buildTree(newNodes[i], depth+1);
             parent.children.push(newNodes[i]);
-
         }
     }
   }
@@ -251,8 +239,13 @@ async function buildTree(node, d) {
     if (dest.substring(dest.length-1) == '"') {
         dest = dest.slice(0, -1);
     }
-    console.log("url:", dest);
-    let res = await makeRequest("GET", dest);
+    var res = '';
+    try {
+        res = await makeRequest("GET", dest);
+    }
+    catch {
+        return;
+    }
     var urls = [];
 
     let pageText = res;
@@ -319,17 +312,32 @@ async function buildTree(node, d) {
 let inputButton = document.getElementById("inputButton");
 
 inputButton.addEventListener("click", async () => {
-    // let [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+
     let baseSite = document.getElementById("baseSite");
     console.log("baseSite: " + baseSite.value);
     document.getElementById("currPage").innerText = "Current Root Site ("+baseSite.value+") ";
-    let origin = {"url": baseSite.value};
-    chrome.storage.sync.set({'baseSite':origin}, function() {
-        console.log("baseSite:" + origin);
-    });
+    origin = {"url": baseSite.value};    
+});
+
+let depthButton = document.getElementById("depthButton");
+
+depthButton.addEventListener("click", async () => {
+    maxDepth = document.getElementById("depth").value;
+});
+
+let buildButton = document.getElementById("buildButton");
+
+buildButton.addEventListener("click", async () => {
+    //reset scene
+    scene.remove.apply(scene, scene.children);
+    scene.add(light);
+    nodes = [];
+    existingURLS = [];
+    //initial node
     addNode(0, 0, 0, origin["url"], null, 0);
     existingURLS.push(origin["url"]);
-    
+
+    // build tree from root node
     buildTree(nodes[0], 1);
 });
 
@@ -387,7 +395,7 @@ function pressKey() {
     else if (event.keyCode === 68) {
         right = true;
     }
-    console.log(event.keyCode);
+    // console.log(event.keyCode);
 }
 document.onkeydown = pressKey;
 
@@ -443,11 +451,6 @@ resetButton.addEventListener("click", async () => {
 /**
  * Scene initialization below
  */
-
-// addNode(0, 0, "https://website.com/blahblahblahblahblahblahblahblah");
-// addNode(10, 0, "https://google.com");
-// addNode(-10, 0, "http://some-site.com/contact-about-us");
-
 
 
 // finally, animate
