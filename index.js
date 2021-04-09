@@ -33,7 +33,7 @@ var currNodeMaterial = new THREE.MeshLambertMaterial({color:0xFFAAFF});
 var lineMaterial = new THREE.LineBasicMaterial({ color: 0x00FFFF})
 var nodeRadius = .5;
 var nodes = [];
-var maxDepth = 3;
+var maxDepth = 2;
 var existingURLS = [];
 
 
@@ -179,36 +179,59 @@ function makeLabelCanvas(baseWidth, size, name) {
     // build out the current node connections
     for(var i = 0; i < links.length; i++) {
         console.log("adding", links[i]);
-        let angle = i*(Math.PI*2 / links.length);
+
+        let d = 20; // line scale factor
         var xCoord, yCoord, zCoord;
-        let d = 20;
-        if (dir == "x") {
-            xCoord = (nodeRadius*d*depth) * Math.cos(angle) + parent.position.x;
-            yCoord = (nodeRadius*d*depth) * Math.sin(angle) + parent.position.y;
+        let pangle = parent.userData["angle"];
+
+        if (links.length > 2) {
+
+            let angle = i*(Math.PI*2 / links.length);
+            if (dir == "x") {
+                xCoord = (nodeRadius*d) * Math.cos(angle) + parent.position.x;
+                yCoord = (nodeRadius*d) * Math.sin(angle) + parent.position.y;
+                zCoord = parent.position.z;
+                console.log(xCoord, yCoord, zCoord);
+
+                let node = addNode(xCoord, yCoord, zCoord, links[i], parent, "z", angle);
+                newNodes.push(node);
+            }
+            else if (dir == "z") {
+                
+                xCoord = (nodeRadius*d) * Math.cos(angle) + parent.position.x;
+                yCoord = (nodeRadius*d) + parent.position.y;
+                zCoord = (nodeRadius*d) * Math.sin(angle) + parent.position.z;
+
+
+                let vec = new THREE.Vector3(xCoord, yCoord, zCoord);
+
+                let axis = new THREE.Vector3(parent.position.x, parent.position.y, parent.position.z);
+
+                console.log(axis);
+                axis = axis.normalize();
+                console.log(axis);
+                vec = vec.applyAxisAngle(axis, pangle);
+
+                let node = addNode(vec.x, vec.y, vec.z, links[i], parent, "x", angle);
+                newNodes.push(node);
+
+            }
+        }
+        else {
+            xCoord = (nodeRadius*d) * Math.cos(pangle) + parent.position.x;
+            yCoord = (nodeRadius*d) * Math.sin(pangle) + parent.position.y;
             zCoord = parent.position.z;
-            console.log(xCoord, yCoord, zCoord);
 
             let node = addNode(xCoord, yCoord, zCoord, links[i], parent, "z", angle);
             newNodes.push(node);
-        }
-        else if (dir == "z") {
-            let pangle = parent.userData["angle"];
-            xCoord = parent.position.x;
-            yCoord = (nodeRadius*d) * Math.sin(angle) + parent.position.y;
-            zCoord = ((nodeRadius*d) * Math.cos(angle) + parent.position.z);
-            // xCoord = (parent.position.x + depth*((parent.position.x >= 0) ? nodeRadius*d : nodeRadius*-d)) * Math.sin(parent.userData["angle"]);
-            // yCoord = (nodeRadius*d) * Math.sin(angle) + parent.position.y;
-            // zCoord = ((nodeRadius*d) * Math.cos(angle) + parent.position.z);
-
-            let node = addNode(xCoord, yCoord, zCoord, links[i], parent, "x", angle);
-            newNodes.push(node);
-
         }
         console.log("added", links[i])
     }
     for (var i = 0; i < newNodes.length; i++) {
         if (depth <= maxDepth){
             buildTree(newNodes[i], depth+1);
+            parent.children.push(newNodes[i]);
+
         }
     }
   }
@@ -294,7 +317,7 @@ async function buildTree(node, d) {
         return !existingURLS.includes(e);
     })
     existingURLS = existingURLS.concat(urls);
-    console.log("urls", urls);
+    // console.log("urls", urls);
 
     // limit tree depth
     if (d <= maxDepth) {
