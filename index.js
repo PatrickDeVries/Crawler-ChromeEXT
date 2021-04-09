@@ -81,7 +81,7 @@ function makeLabelCanvas(baseWidth, size, name) {
   }
 
   // node creator function
-  function addNode(x, y, z, labelStr, parentNode, dir, angle) {
+  function addNode(x, y, z, labelStr, parentNode, angle) {
     // make labels
     const canvas = makeLabelCanvas(200, 48, labelStr);
     const texture = new THREE.CanvasTexture(canvas);
@@ -111,7 +111,7 @@ function makeLabelCanvas(baseWidth, size, name) {
         node = new THREE.Mesh(geometry, nodeMaterial);
     }
 
-    node.userData = {"url": labelStr, "parent": parentNode, "children": [], "dir":dir, "angle":angle}
+    node.userData = {"url": labelStr, "parent": parentNode, "children": [], "angle":angle}
     if (!parentNode) {
         node.x = x;
         node.y = y;
@@ -175,54 +175,40 @@ function makeLabelCanvas(baseWidth, size, name) {
   function addChildNodes(dir, links, parent, depth) {
     console.log("addChildNodes links", links, "length", links.length, "parent", parent);  
     
+    let tempObject = new THREE.SphereGeometry(0, 0, 0);
+    let pivot = new THREE.Mesh(tempObject, currNodeMaterial);
+    console.log("t", pivot);
+
+    pivot.position.set(parent.position.x, parent.position.y, parent.position.z);
+    console.log("t", pivot);
+
     var newNodes = []
     // build out the current node connections
     for(var i = 0; i < links.length; i++) {
         console.log("adding", links[i]);
 
-        let d = 20; // line scale factor
+        let d = 50; // line scale factor
         var xCoord, yCoord, zCoord;
         let pangle = parent.userData["angle"];
 
-        if (links.length > 2) {
+        if (links.length > 1) {
 
             let angle = i*(Math.PI*2 / links.length);
-            if (dir == "x") {
-                xCoord = (nodeRadius*d) * Math.cos(angle) + parent.position.x;
-                yCoord = (nodeRadius*d) * Math.sin(angle) + parent.position.y;
-                zCoord = parent.position.z;
-                console.log(xCoord, yCoord, zCoord);
+            xCoord = (nodeRadius*(d)) * Math.cos(angle) + parent.position.x;
+            yCoord = (nodeRadius*(d)) * Math.sin(angle) + parent.position.y;
+            zCoord = parent.position.z - depth*10;
+            console.log(xCoord, yCoord, zCoord);
 
-                let node = addNode(xCoord, yCoord, zCoord, links[i], parent, "z", angle);
-                newNodes.push(node);
-            }
-            else if (dir == "z") {
-                
-                xCoord = (nodeRadius*d) * Math.cos(angle) + parent.position.x;
-                yCoord = (nodeRadius*d) + parent.position.y;
-                zCoord = (nodeRadius*d) * Math.sin(angle) + parent.position.z;
-
-
-                let vec = new THREE.Vector3(xCoord, yCoord, zCoord);
-
-                let axis = new THREE.Vector3(parent.position.x, parent.position.y, parent.position.z);
-
-                console.log(axis);
-                axis = axis.normalize();
-                console.log(axis);
-                vec = vec.applyAxisAngle(axis, pangle);
-
-                let node = addNode(vec.x, vec.y, vec.z, links[i], parent, "x", angle);
-                newNodes.push(node);
-
-            }
+            let node = addNode(xCoord, yCoord, zCoord, links[i], parent, angle);
+            newNodes.push(node);
+            
         }
         else {
             xCoord = (nodeRadius*d) * Math.cos(pangle) + parent.position.x;
             yCoord = (nodeRadius*d) * Math.sin(pangle) + parent.position.y;
             zCoord = parent.position.z;
 
-            let node = addNode(xCoord, yCoord, zCoord, links[i], parent, "z", angle);
+            let node = addNode(xCoord, yCoord, zCoord, links[i], parent, pangle);
             newNodes.push(node);
         }
         console.log("added", links[i])
@@ -341,7 +327,7 @@ inputButton.addEventListener("click", async () => {
     chrome.storage.sync.set({'baseSite':origin}, function() {
         console.log("baseSite:" + origin);
     });
-    addNode(0, 0, 0, origin["url"], null, "x", 0);
+    addNode(0, 0, 0, origin["url"], null, 0);
     existingURLS.push(origin["url"]);
     
     buildTree(nodes[0], 1);
@@ -498,8 +484,8 @@ function animate() {
     camera.rotation.x = my/250;
 
     // block user from going past 0z
-    if (camera.position.z < 0)
-        camera.position.z = 0;
+    // if (camera.position.z < 0)
+    //     camera.position.z = 0;
 
     resizeCanvasToDisplaySize();
     // finally render scene
