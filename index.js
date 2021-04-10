@@ -267,7 +267,7 @@ async function buildTree(node, d) {
     console.log("before res")
     var res = await makeRequest("GET", dest).catch(() => {
         console.log("res", res);
-        if (!res || res.length == 0) {
+        if (d == 0 && (!res || res.length == 0)) {
             document.getElementById("buildError").innerText = "Error loading site, choose a different URL"
             return;
         }
