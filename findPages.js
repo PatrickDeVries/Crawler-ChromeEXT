@@ -1,87 +1,5 @@
 
-
-async function sendQuery(url) {
-
-}
-
-
- function getLinks(url) {
-
-
-    return new Promise(function(resolve) {
-        var urls = [];
-        var xhr = new XMLHttpRequest();
-        try {
-            if (url.substring(url.length-1) == '"') {
-                url = url.slice(0, -1);
-            }
-            console.log("url:", url);
-            let results = sendQuery(url);
-            
-            xhr.open("GET", url);
-            xhr.send();
-            xhr.onreadystatechange = function() {
-                if (this.readyState == 4 && this.status == 200) {
-                    let pageText = this.responseText;
-    
-                    //remove scripts to be safe
-                    let expr = /<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi;
-                    pageText = pageText.replace(expr, "script removed for security");
-    
-                    // find all urls
-                    const expression = /(https?:\/\/(?:www\.|(?!www))[a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9]\.[^\s]{2,}|www\.[a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9]\.[^\s]{2,}|https?:\/\/(?:www\.|(?!www))[a-zA-Z0-9]+\.[^\s]{2,}|www\.[a-zA-Z0-9]+\.[^\s]{2,})/gi;
-                    let regURL = RegExp(expression, "g")
-    
-                    var result;
-                    while((result = regURL.exec(this.responseText)) !== null) {
-                        
-                        // Try to correct urls with script tags attached
-                        var url = result[0];
-                        if (url.includes('"></script>')) {
-                            url = url.slice(0, -11);
-                        }
-                        // check for bad file types
-                        const badEnds = [".js", ".css", ".png", ".jpg"];
-                        let badURL = false;
-                        badEnds.forEach(ending => {
-                            if (url.includes(ending)) {
-                                badURL = true;
-                                return;
-                            }
-                        });
-                        // double check for extra html tags in url
-                        if (url.includes("<") || url.includes(">")) {
-                            badURL = true;
-                        }
-                        if (badURL) {
-                            continue;
-                        }
-                        // make sure to have http
-                        if (url.slice(0, 3) == "www") {
-                            url = "http://" + url;
-                        }
-
-                        urls.push(url);
-                    }
-                }
-                else if (this.readyState == 4) {
-                    console.log("Error loading site");
-                }
-            };
-        } 
-        catch {
-            console.log("Error loading site");
-        }
-        console.log("urls", urls);
-        resolve(urls);
-    });
-    // promise.then(function(result) {
-    //     return result;
-    // });
-    // return promise;
-}
-
-// function that will load html and urls from a site 
+// function that will load a sites html and insert it into the disassembly section
 function processSite(urlLoc, insertId, errorId) {
     let baseSite = '';
     chrome.storage.sync.get(urlLoc, function (obj) {  
@@ -102,45 +20,6 @@ function processSite(urlLoc, insertId, errorId) {
                     pageText = pageText.replace(expr, "script removed for security");
 
                     document.getElementById(insertId).innerText = pageText;
-
-                    // find all urls
-                    const expression = /(https?:\/\/(?:www\.|(?!www))[a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9]\.[^\s]{2,}|www\.[a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9]\.[^\s]{2,}|https?:\/\/(?:www\.|(?!www))[a-zA-Z0-9]+\.[^\s]{2,}|www\.[a-zA-Z0-9]+\.[^\s]{2,})/gi;
-                    let regURL = RegExp(expression, "g")
-
-                    var result;
-                    while((result = regURL.exec(this.responseText)) !== null) {
-                        
-                        // Try to correct urls with script tags attached
-                        var url = result[0];
-                        if (url.includes('"></script>')) {
-                            url = url.slice(0, -11);
-                        }
-                        // check for bad file types
-                        const badEnds = [".js", ".css"]
-                        let badURL = false;
-                        badEnds.forEach(ending => {
-                            if (url.includes(ending)) {
-                                badURL = true;
-                                return;
-                            }
-                        });
-                        // double check for extra html tags in url
-                        if (url.includes("<") || url.includes(">")) {
-                            badURL = true;
-                        }
-                        if (badURL) {
-                            continue;
-                        }
-                        // make sure to have http
-                        if (url.slice(0, 3) == "www") {
-                            url = "http://" + url;
-                        }
-
-                        // checks passed!
-
-
-                        console.log(url);
-                    }
                 }
                 else if (this.readyState == 4) {
                     console.log("Error loading site");
@@ -158,11 +37,10 @@ function processSite(urlLoc, insertId, errorId) {
     });
 }
 
+
+// disassembly listener
 let dissButton = document.getElementById("dissButton");
 
 dissButton.addEventListener("click", async () => {
-    let [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-
     processSite("currURL", "dissDiv", "dissError");
-    
   });

@@ -5,6 +5,12 @@ chrome.runtime.onInstalled.addListener(() => {
   console.log('Default background color set to %ccolor', `color: ${color}`);
 });
 
+chrome.browserAction.onClicked.addListener(function(activeTab)
+{
+    var newURL = chrome.extension.getURL("main.html");
+    chrome.tabs.create({ url: newURL });
+});
+
 
 
 

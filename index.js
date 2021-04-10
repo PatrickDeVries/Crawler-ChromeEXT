@@ -1,5 +1,5 @@
 import * as THREE from './three/src/Three.js';
-// import {getLinks} from './findPages.js';
+
 /**
  * Scene setup below
  */
@@ -12,10 +12,7 @@ light.position.y = 50;
 light.position.z = 50;
 scene.add(light);
 
-// let cWidth = document.getElementById("graphSec");
 
-// console.log(cWidth.width);
-// renderer.setSize(window.innerWidth, window.innerHeight);
 document.getElementById("graph").appendChild(renderer.domElement);
 
 camera.position.set(0, 2, 10);
@@ -170,6 +167,7 @@ function makeLabelCanvas(baseWidth, size, name) {
     return node;
   }
 
+  // resizer function for graph
   function resizeCanvasToDisplaySize() {
     const canvas = renderer.domElement;
     // look up the size the canvas is being displayed
@@ -187,15 +185,16 @@ function makeLabelCanvas(baseWidth, size, name) {
     }
   }
 
+  // function that takes in a set of urls and creates nodes for each, linking them to a parent node
   function addChildNodes(links, parent, depth) {
     
-    var newNodes = []
+    var newNodes = []        
+    let d = nodeRadius*links.length*1.25; // line scale factor
+    let pangle = parent.userData["angle"];
+
     // build out the current node connections
     for(var i = 0; i < links.length; i++) {
-
-        let d = nodeRadius*links.length*1.25; // line scale factor
         var xCoord, yCoord, zCoord;
-        let pangle = parent.userData["angle"];
 
         if (links.length > 1) {
 
@@ -208,6 +207,7 @@ function makeLabelCanvas(baseWidth, size, name) {
             newNodes.push(node);
             
         }
+        // special case for single child nodes (no depth increase)
         else {
             xCoord = (nodeRadius*d) * Math.cos(pangle) + parent.position.x;
             yCoord = (nodeRadius*d) * Math.sin(pangle) + parent.position.y;
@@ -226,6 +226,7 @@ function makeLabelCanvas(baseWidth, size, name) {
     }
   }
 
+  // helper function for making promisified requests to urls
   function makeRequest(method, url) {
     return new Promise(function (resolve, reject) {
         let xhr = new XMLHttpRequest();
@@ -250,6 +251,7 @@ function makeLabelCanvas(baseWidth, size, name) {
     });
 }
 
+// function which takes in an initial node and uses it to create the graph
 async function buildTree(node, d) {
     let dest = node.userData["url"];
     if (dest.substring(dest.length-1) == '"') {
@@ -282,8 +284,9 @@ async function buildTree(node, d) {
         if (url.includes('"></script>')) {
             url = url.slice(0, -11);
         }
+
         // check for bad file types
-        const badEnds = [".js", ".css", ".png", ".jpg"];
+        const badEnds = [".js", ".css", ".png", ".jpg", ".gif"];
         let badURL = false;
         badEnds.forEach(ending => {
             if (url.includes(ending)) {
@@ -301,6 +304,11 @@ async function buildTree(node, d) {
         // make sure to have http
         if (url.slice(0, 3) == "www") {
             url = "http://" + url;
+        }
+
+        // remove quotes at the end of urls
+        if (url.substring(url.length-1) == '"' || url.substring(url.length-1) == "'") {
+            url = url.slice(0, -1);
         }
 
         urls.push(url);
@@ -360,6 +368,8 @@ buildButton.addEventListener("click", async () => {
     scene.add(light);
     nodes = [];
     existingURLS = [];
+    currNode = '';
+
     //initial node
     addNode(0, 0, 0, origin["url"], null, 0, 1);
     existingURLS.push(origin["url"]);
@@ -376,6 +386,7 @@ makeButton.addEventListener("click", async () => {
     scene.add(light);
     nodes = [];
     existingURLS = [];
+    currNode = '';
 
     origin = {"url": currURL["url"]};    
 
