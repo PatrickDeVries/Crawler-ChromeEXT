@@ -329,10 +329,21 @@ let inputButton = document.getElementById("inputButton");
 
 inputButton.addEventListener("click", async () => {
 
-    let baseSite = document.getElementById("baseSite");
-    console.log("baseSite: " + baseSite.value);
-    document.getElementById("currPage").innerText = "Current Root Site ("+baseSite.value+") ";
-    origin = {"url": baseSite.value};    
+    let baseSite = document.getElementById("baseSite").value;
+    console.log("baseSite: " + baseSite);
+    document.getElementById("currPage").innerText = "Current Root Site ("+baseSite+") ";
+    origin = {"url": baseSite};    
+});
+
+let googButton = document.getElementById("googButton");
+
+googButton.addEventListener("click", async () => {
+
+    let query = document.getElementById("baseGoog").value;
+    let baseSite = "http://google.com/search?q=" + query.replaceAll(" ", "+");
+    console.log("baseSite: " + baseSite);
+    document.getElementById("currPage").innerText = "Current Root Site ("+baseSite+") ";
+    origin = {"url": baseSite};    
 });
 
 let depthButton = document.getElementById("depthButton");
