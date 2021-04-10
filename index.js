@@ -209,8 +209,8 @@ function makeLabelCanvas(baseWidth, size, name) {
         }
         // special case for single child nodes (no depth increase)
         else {
-            xCoord = (nodeRadius*d) * Math.cos(pangle) + parent.position.x;
-            yCoord = (nodeRadius*d) * Math.sin(pangle) + parent.position.y;
+            xCoord = (nodeRadius*d*10) * Math.cos(pangle) + parent.position.x;
+            yCoord = (nodeRadius*d*10) * Math.sin(pangle) + parent.position.y;
             zCoord = parent.position.z;
 
             let node = addNode(xCoord, yCoord, zCoord, links[i], parent, pangle, depth);
@@ -533,22 +533,21 @@ function animate() {
       
     // handle movement
     camera.getWorldDirection(direction);
-    if (up) {
+    if (up || down || left || right) {
         speed+=.01;
+    }
+    if (up) {
         camera.position.addScaledVector(direction, speed);
     }
     if (down) {
-        speed+=.01;
         camera.position.addScaledVector(direction, -speed);
     }
     if (left) {
-        speed+=.01;
         var axis = new THREE.Vector3(0,1,0);
         direction.applyAxisAngle(axis, 90*Math.PI/180);
         camera.position.addScaledVector(direction, speed);
     }
     if (right) {
-        speed+=.01;
         var axis = new THREE.Vector3(0,1,0);
         direction.applyAxisAngle(axis, -90*Math.PI/180);
         camera.position.addScaledVector(direction, speed);
