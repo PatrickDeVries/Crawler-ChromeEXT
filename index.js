@@ -30,7 +30,6 @@ var mouse = new THREE.Vector2();
 // variables for node information
 var nodeMaterial = new THREE.MeshLambertMaterial({color:0xFF00FF});
 var currNodeMaterial = new THREE.MeshLambertMaterial({color:0xFFAAFF});
-var lineMaterial = new THREE.LineBasicMaterial({ color: 0x00FFFF})
 var nodeRadius = .5;
 var nodes = [];
 var maxDepth = 3;
@@ -82,7 +81,7 @@ function makeLabelCanvas(baseWidth, size, name) {
   }
 
   // node creator function
-  function addNode(x, y, z, labelStr, parentNode, angle) {
+  function addNode(x, y, z, labelStr, parentNode, angle, depth) {
     // make labels
     const canvas = makeLabelCanvas(200, 48, labelStr);
     const texture = new THREE.CanvasTexture(canvas);
@@ -144,8 +143,24 @@ function makeLabelCanvas(baseWidth, size, name) {
         points.push(new THREE.Vector3(0, 0, 0));
         points.push(new THREE.Vector3(0, 0, 0).sub(n.sub(p)));   
         const lineGeo = new THREE.BufferGeometry().setFromPoints( points );
+        let c = '';
+        // let c = new THREE.Color(0, maxCol, maxCol);
+        if (depth == 1) {
+            c = 0x00FFFF;
+        }
+        else if (depth == 2) {
+            c = 0x00FFCC;
+        }
+        else if (depth == 3) {
+            c = 0x00FF99;
+        }
+        else {
+            c = 0x00FF66;
+        }
+        let lineMaterial = new THREE.LineBasicMaterial({ color: c})
 
         var line = new THREE.Line(lineGeo,lineMaterial);
+        line.material.color.set(c);
         node.add(line);
     }
   
@@ -172,12 +187,13 @@ function makeLabelCanvas(baseWidth, size, name) {
     }
   }
 
-  function addChildNodes(dir, links, parent, depth) {
+  function addChildNodes(links, parent, depth) {
     
     var newNodes = []
     // build out the current node connections
     for(var i = 0; i < links.length; i++) {
-        let d = 50; // line scale factor
+
+        let d = nodeRadius*links.length*1.25; // line scale factor
         var xCoord, yCoord, zCoord;
         let pangle = parent.userData["angle"];
 
@@ -188,7 +204,7 @@ function makeLabelCanvas(baseWidth, size, name) {
             yCoord = (nodeRadius*(d)) * Math.sin(angle) + parent.position.y;
             zCoord = parent.position.z - depth*10;
 
-            let node = addNode(xCoord, yCoord, zCoord, links[i], parent, angle);
+            let node = addNode(xCoord, yCoord, zCoord, links[i], parent, angle, depth);
             newNodes.push(node);
             
         }
@@ -197,7 +213,7 @@ function makeLabelCanvas(baseWidth, size, name) {
             yCoord = (nodeRadius*d) * Math.sin(pangle) + parent.position.y;
             zCoord = parent.position.z;
 
-            let node = addNode(xCoord, yCoord, zCoord, links[i], parent, pangle);
+            let node = addNode(xCoord, yCoord, zCoord, links[i], parent, pangle, depth);
             newNodes.push(node);
         }
         // console.log("added", links[i])
@@ -300,7 +316,7 @@ async function buildTree(node, d) {
 
     // limit tree depth
     if (d <= maxDepth) {
-        addChildNodes(node.userData["dir"], urls, node, d);
+        addChildNodes(urls, node, d);
     }
 }
 
@@ -334,12 +350,34 @@ buildButton.addEventListener("click", async () => {
     nodes = [];
     existingURLS = [];
     //initial node
-    addNode(0, 0, 0, origin["url"], null, 0);
+    addNode(0, 0, 0, origin["url"], null, 0, 1);
     existingURLS.push(origin["url"]);
 
     // build tree from root node
     buildTree(nodes[0], 1);
 });
+
+let makeButton = document.getElementById("makeButton");
+
+makeButton.addEventListener("click", async () => {
+    //reset scene
+    scene.remove.apply(scene, scene.children);
+    scene.add(light);
+    nodes = [];
+    existingURLS = [];
+
+    origin = {"url": currURL["url"]};    
+
+    //initial node
+    addNode(0, 0, 0, origin["url"], null, 0, 1);
+    existingURLS.push(origin["url"]);
+    document.getElementById("currPage").innerText = "Current Root Site ("+origin["url"]+") ";
+
+
+    // build tree from root node
+    buildTree(nodes[0], 1);
+});
+
 
 // track if the mouse button is held down
 var mouseDown = false;
@@ -474,21 +512,21 @@ function animate() {
     // handle movement
     camera.getWorldDirection(direction);
     if (up) {
-        speed*=1.01;
+        speed+=.01;
         camera.position.addScaledVector(direction, speed);
     }
     if (down) {
-        speed*=1.01;
+        speed+=.01;
         camera.position.addScaledVector(direction, -speed);
     }
     if (left) {
-        speed*=1.01;
+        speed+=.01;
         var axis = new THREE.Vector3(0,1,0);
         direction.applyAxisAngle(axis, 90*Math.PI/180);
         camera.position.addScaledVector(direction, speed);
     }
     if (right) {
-        speed*=1.01;
+        speed+=.01;
         var axis = new THREE.Vector3(0,1,0);
         direction.applyAxisAngle(axis, -90*Math.PI/180);
         camera.position.addScaledVector(direction, speed);
