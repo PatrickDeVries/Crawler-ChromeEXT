@@ -541,9 +541,7 @@ resetButton.addEventListener("click", async () => {
 function animate() {
     requestAnimationFrame(animate);
     // update  background color
-    chrome.storage.sync.get("color", ({ color }) => {
-        scene.background = new THREE.Color(color);
-      });
+    scene.background = new THREE.Color(0x0f0f3d);
 
       
     // handle movement
