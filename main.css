@@ -74,9 +74,7 @@ button {
   width: 98vw;
 }  */
 
-#buildError {
-  color: red;
-}
+
 
 #treeDiv, #treeDiv *{
     all: initial;
@@ -97,4 +95,8 @@ button {
 #treeHeader {
   outline: 2px solid cyan;
   background-color: #1e1a24;
+}
+
+#buildError #dissError{
+  color: red;
 }

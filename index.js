@@ -253,17 +253,27 @@ function makeLabelCanvas(baseWidth, size, name) {
 
 // function which takes in an initial node and uses it to create the graph
 async function buildTree(node, d) {
-    let dest = node.userData["url"];
+    document.getElementById("buildError").innerText = ""
+    let dest = ""
+    try {
+     dest = node.userData["url"];
+    }
+    catch {
+        document.getElementById("buildError").innerText = "Error, select a URL"
+    }
     if (dest.substring(dest.length-1) == '"') {
         dest = dest.slice(0, -1);
     }
-    var res = '';
-    try {
-        res = await makeRequest("GET", dest);
-    }
-    catch {
-        return;
-    }
+    console.log("before res")
+    var res = await makeRequest("GET", dest).catch(() => {
+        console.log("res", res);
+        if (!res || res.length == 0) {
+            document.getElementById("buildError").innerText = "Error loading site, choose a different URL"
+            return;
+        }
+    });
+    
+        
     var urls = [];
 
     let pageText = res;
@@ -371,7 +381,12 @@ buildButton.addEventListener("click", async () => {
     currNode = '';
 
     //initial node
-    addNode(0, 0, 0, origin["url"], null, 0, 1);
+    try {
+        addNode(0, 0, 0, origin["url"], null, 0, 1);
+    }
+    catch {
+        document.getElementById("buildError").innerText = "Error, select a URL"
+    }
     existingURLS.push(origin["url"]);
 
     // build tree from root node
