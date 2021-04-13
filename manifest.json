@@ -1,14 +1,12 @@
 {
     "name": "Three Web Stalker",
     "description": "Browser alternative / web crawler visualizer",
-    "version": "0.1.1",
+    "version": "0.1.2",
     "manifest_version": 3,
     "background": {
         "threejs_worker": "index.js"
     },
-    "permissions": ["storage", 
-        "scripting", 
-        "tabs"],
+    "permissions": ["storage"],
     "host_permissions": [
         "http://*/",
         "https://*/"
